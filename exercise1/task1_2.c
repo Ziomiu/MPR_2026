@@ -1,41 +1,41 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include <stdint.h>
 #include <mpi.h>
 
+#define ITER 100000
+#define MSG_SIZE 8
 
 int main(int argc, char **argv) {
 
     MPI_Init(&argc, &argv);
 
     int rank;
-    int iters = 100000;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-    uint64_t msg = 12345678;
-    uint64_t rec;
+    char msg[MSG_SIZE] = "1234567";
+    char rec[MSG_SIZE];
 
     MPI_Request request;
 
     MPI_Barrier(MPI_COMM_WORLD);
     double start = MPI_Wtime();
 
-    for (int i = 0; i < iters; i++) {
+    for(int i = 0; i < ITER; i++) {
 
-        if (rank == 0) {
+        if(rank == 0) {
 
-            MPI_Irecv(&rec, 1, MPI_UINT64_T, 1, 0, MPI_COMM_WORLD, &request);
+            MPI_Irecv(rec, MSG_SIZE, MPI_CHAR, 1, 0, MPI_COMM_WORLD, &request);
 
-            MPI_Rsend(&msg, 1, MPI_UINT64_T, 1, 0, MPI_COMM_WORLD);
+            MPI_Rsend(msg, MSG_SIZE, MPI_CHAR, 1, 0, MPI_COMM_WORLD);
 
             MPI_Wait(&request, MPI_STATUS_IGNORE);
         }
 
-        if (rank == 1) {
+        if(rank == 1) {
 
-            MPI_Irecv(&rec, 1, MPI_UINT64_T, 0, 0, MPI_COMM_WORLD, &request);
+            MPI_Irecv(rec, MSG_SIZE, MPI_CHAR, 0, 0, MPI_COMM_WORLD, &request);
 
-            MPI_Rsend(&msg, 1, MPI_UINT64_T, 0, 0, MPI_COMM_WORLD);
+            MPI_Rsend(msg, MSG_SIZE, MPI_CHAR, 0, 0, MPI_COMM_WORLD);
 
             MPI_Wait(&request, MPI_STATUS_IGNORE);
         }
@@ -44,11 +44,11 @@ int main(int argc, char **argv) {
     MPI_Barrier(MPI_COMM_WORLD);
     double end = MPI_Wtime();
 
-    if (rank == 0) {
+    if(rank == 0) {
 
         double time = end - start;
 
-        double total_bytes = (double) iters * 2 * 8;
+        double total_bytes = (double)ITER * 2 * MSG_SIZE;
         double bandwidth_MB = total_bytes / (1024.0 * 1024.0) / time;
 
         printf("Total time: %f s\n", time);
