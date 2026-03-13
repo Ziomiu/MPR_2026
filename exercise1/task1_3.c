@@ -8,7 +8,6 @@
 int main(int argc, char **argv) {
 
     MPI_Init(&argc, &argv);
-
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
@@ -16,22 +15,25 @@ int main(int argc, char **argv) {
     char rec[MSG_SIZE];
 
     MPI_Request request;
-
     MPI_Barrier(MPI_COMM_WORLD);
     double start = MPI_Wtime();
 
     for(int i = 0; i < ITER; i++) {
 
         if(rank == 0) {
-            MPI_Irecv(rec, MSG_SIZE, MPI_CHAR, 1, 0, MPI_COMM_WORLD, &request);
-            MPI_Rsend(msg, MSG_SIZE, MPI_CHAR, 1, 0, MPI_COMM_WORLD);
-            MPI_Wait(&request, MPI_STATUS_IGNORE);
+            MPI_Barrier(MPI_COMM_WORLD);
+            MPI_Rsend(&msg, 1, MPI_INT, 1, 0, MPI_COMM_WORLD);
+            MPI_Irecv(&rec, 1, MPI_INT, 1, 0, MPI_COMM_WORLD, &request);
+            MPI_Barrier(MPI_COMM_WORLD);
+            MPI_Wait(&request,MPI_STATUS_IGNORE);
         }
 
         if(rank == 1) {
-            MPI_Irecv(rec, MSG_SIZE, MPI_CHAR, 0, 0, MPI_COMM_WORLD, &request);
-            MPI_Rsend(msg, MSG_SIZE, MPI_CHAR, 0, 0, MPI_COMM_WORLD);
-            MPI_Wait(&request, MPI_STATUS_IGNORE);
+            MPI_Irecv(&rec, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, &request);
+            MPI_Barrier(MPI_COMM_WORLD);
+            MPI_Wait(&request,MPI_STATUS_IGNORE);
+            MPI_Barrier(MPI_COMM_WORLD);
+            MPI_Rsend(&msg, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
         }
     }
 
