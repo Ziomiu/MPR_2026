@@ -43,7 +43,7 @@ int main(int argc, char **argv) {
         double end = MPI_Wtime();
         double time = (end - start) / (2.0 * ITER);
 
-        FILE *f = fopen("rsend_latency.txt", "w");
+        FILE *f = fopen("rsend_latency_nobarriers.txt", "w");
         fprintf(f, "%f\n", time * 1000);
         fclose(f);
     }

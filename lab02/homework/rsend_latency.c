@@ -1,9 +1,7 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include <mpi.h>
 
 #define ITER 100000
-#define MAX_SIZE (8*1024*1024)
 
 int main(int argc, char **argv) {
 
@@ -12,59 +10,46 @@ int main(int argc, char **argv) {
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-    char *msg = malloc(MAX_SIZE);
-    char *rec = malloc(MAX_SIZE);
+    char msg;
+    char rec;
 
     MPI_Request request;
 
-    FILE *f = NULL;
-    if (rank == 0)
-        f = fopen("rsend_results.txt", "w");
+    MPI_Barrier(MPI_COMM_WORLD);
 
-    for (int size = 1; size <= MAX_SIZE; size *= 2) {
+    double start = MPI_Wtime();
 
-        MPI_Barrier(MPI_COMM_WORLD);
+    for (int i = 0; i < ITER; i++) {
 
-        double start = MPI_Wtime();
-
-        for (int i = 0; i < ITER; i++) {
-
-            if (rank == 0) {
-                MPI_Barrier(MPI_COMM_WORLD);
-                MPI_Rsend(&msg, 1, MPI_INT, 1, 0, MPI_COMM_WORLD);
-                MPI_Irecv(&rec, 1, MPI_INT, 1, 0, MPI_COMM_WORLD, &request);
-                MPI_Barrier(MPI_COMM_WORLD);
-                MPI_Wait(&request, MPI_STATUS_IGNORE);
-            }
-
-            if (rank == 1) {
-                MPI_Irecv(&rec, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, &request);
-                MPI_Barrier(MPI_COMM_WORLD);
-                MPI_Wait(&request, MPI_STATUS_IGNORE);
-                MPI_Barrier(MPI_COMM_WORLD);
-                MPI_Rsend(&msg, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
-            }
-        }
-
-        MPI_Barrier(MPI_COMM_WORLD);
 
         if (rank == 0) {
+            MPI_Barrier(MPI_COMM_WORLD);
+            MPI_Rsend(&msg, 1, MPI_CHAR, 1, 0, MPI_COMM_WORLD);
+            MPI_Irecv(&rec, 1, MPI_INT, 1, 0, MPI_COMM_WORLD, &request);
+            MPI_Barrier(MPI_COMM_WORLD);
+            MPI_Wait(&request, MPI_STATUS_IGNORE);
+        }
 
-            double end = MPI_Wtime();
-            double time = end - start;
-
-            double bytes = (double) ITER * 2 * size;
-            double bw = bytes / (1024.0 * 1024.0) / time;
-
-            fprintf(f, "%d %f\n", size, bw);
+        if (rank == 1) {
+            MPI_Irecv(&rec, 1, MPI_CHAR, 0, 0, MPI_COMM_WORLD, &request);
+            MPI_Barrier(MPI_COMM_WORLD);
+            MPI_Wait(&request, MPI_STATUS_IGNORE);
+            MPI_Barrier(MPI_COMM_WORLD);
+            MPI_Rsend(&msg, 1, MPI_CHAR, 0, 0, MPI_COMM_WORLD);
         }
     }
 
-    if (rank == 0)
-        fclose(f);
+    MPI_Barrier(MPI_COMM_WORLD);
 
-    free(msg);
-    free(rec);
+    if (rank == 0) {
+
+        double end = MPI_Wtime();
+        double time = (end - start) / (2.0 * ITER);
+
+        FILE *f = fopen("rsend_latency.txt", "w");
+        fprintf(f, "%f\n", time * 1000);
+        fclose(f);
+    }
 
     MPI_Finalize();
 }

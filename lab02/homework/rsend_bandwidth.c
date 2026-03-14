@@ -30,18 +30,18 @@ int main(int argc, char **argv) {
 
             if (rank == 0) {
                 MPI_Barrier(MPI_COMM_WORLD);
-                MPI_Rsend(&msg, 1, MPI_INT, 1, 0, MPI_COMM_WORLD);
-                MPI_Irecv(&rec, 1, MPI_INT, 1, 0, MPI_COMM_WORLD, &request);
+                MPI_Rsend(msg, size, MPI_CHAR, 1, 0, MPI_COMM_WORLD);
+                MPI_Irecv(rec, size, MPI_CHAR, 1, 0, MPI_COMM_WORLD, &request);
                 MPI_Barrier(MPI_COMM_WORLD);
                 MPI_Wait(&request, MPI_STATUS_IGNORE);
             }
 
             if (rank == 1) {
-                MPI_Irecv(&rec, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, &request);
+                MPI_Irecv(rec, size, MPI_INT, 0, 0, MPI_COMM_WORLD, &request);
                 MPI_Barrier(MPI_COMM_WORLD);
                 MPI_Wait(&request, MPI_STATUS_IGNORE);
                 MPI_Barrier(MPI_COMM_WORLD);
-                MPI_Rsend(&msg, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
+                MPI_Rsend(msg, size, MPI_CHAR, 0, 0, MPI_COMM_WORLD);
             }
         }
         MPI_Barrier(MPI_COMM_WORLD);
@@ -55,6 +55,7 @@ int main(int argc, char **argv) {
             double bw = bytes / (1024.0 * 1024.0) / time;
 
             fprintf(f, "%d %f\n", size, bw);
+            printf("%d %f\n", size, bw);
         }
     }
 

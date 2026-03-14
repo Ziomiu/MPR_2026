@@ -51,6 +51,7 @@ int main(int argc, char **argv) {
             double bw = bytes / (1024.0 * 1024.0) / time;
 
             fprintf(f, "%d %f\n", size, bw);
+            printf( "%d %f\n", size, bw);
         }
     }
 
